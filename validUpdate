@@ -6,9 +6,6 @@ define('START_TIME_DELTA_MAX',0.1);
 define('WIND_DIRECTION_DEGREE_MIN',130);
 define('WIND_DIRECTION_DEGREE_MAX',160);
 
-/* debugging output */
-$d=false;
-
 $mysqli = mysqli_connect(DB_HOST,DB_USERNAME,DB_PASSWORD,DB_DATABASE);
 $sql = sprintf("SELECT * FROM powerPerformance WHERE valid IS null");
 $res = mysqli_query($mysqli, $sql);
@@ -48,9 +45,6 @@ for ( $i=0 ; $r = mysqli_fetch_assoc($res) ; $i++ ) {
 	   [valid] =>
 	*/
 
-	if ( $d ) {
-		print_r($r);
-	}
 
 
 	/* primary and secondary anemometer wind speed */
