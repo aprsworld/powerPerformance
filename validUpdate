@@ -11,7 +11,6 @@ $d=false;
 
 $mysqli = mysqli_connect(DB_HOST,DB_USERNAME,DB_PASSWORD,DB_DATABASE);
 $sql = sprintf("SELECT * FROM powerPerformance WHERE valid IS null");
-
 $res = mysqli_query($mysqli, $sql);
 
 /*
@@ -83,10 +82,11 @@ for ( $i=0 ; $r = mysqli_fetch_assoc($res) ; $i++ ) {
 
 //print_r($record_valid);
 
+/* update the record to show the validity */
 foreach ($record_valid as $key => $value) {
-	if ( 1 == $value ) {
-		printf("%s was valid\n",$key);
-	}
+	$sql=sprintf("UPDATE powerPerformance SET valid=%d WHERE packet_date='%s'",$value,$key);
+	printf("SQL: %s\n",$sql);
+	$res = mysqli_query($mysqli, $sql);
 }
 
 
