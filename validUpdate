@@ -1,0 +1,94 @@
+#!/usr/bin/php -q
+<?
+require_once 'config.php';
+define('WIND_AVERAGE_DELTA_MAX',1.0);
+define('START_TIME_DELTA_MAX',0.1);
+define('WIND_DIRECTION_DEGREE_MIN',130);
+define('WIND_DIRECTION_DEGREE_MAX',160);
+
+/* debugging output */
+$d=false;
+
+$mysqli = mysqli_connect(DB_HOST,DB_USERNAME,DB_PASSWORD,DB_DATABASE);
+$sql = sprintf("SELECT * FROM powerPerformance WHERE valid IS null");
+
+$res = mysqli_query($mysqli, $sql);
+
+/*
+$record_valid['packet_date']=0 or 1 
+*/
+$record_valid=array();
+
+for ( $i=0 ; $r = mysqli_fetch_assoc($res) ; $i++ ) {
+	/* assume invalid */
+	$record_valid[$r['packet_date']]=0;
+
+	printf("# processing %s: ",$r['packet_date']);
+
+	/*
+	   [packet_date] => 2016-02-15 18:14:00
+	   [wx_time] => 1455560040.0652
+	   [windAverage0] => 3.49114
+	   [windSpeed0] => 3.51
+	   [windGust0] => 3.906
+	   [windCount0] => 696
+	   [windAverage1] => 3.08214
+	   [windSpeed1] => 2.84186
+	   [windGust1] => 3.43717
+	   [windCount1] => 35
+	   [rpmAverage] => 0
+	   [rpmSpeed] => 0
+	   [rpmGust] => 0
+	   [rpmCount] => 0
+	   [windDirection] => 91
+	   [temperatureAmbient] => 4.07165
+	   [power_time] => 1455560040.0651
+	   [vBatt] => 13.5779
+	   [iRectifier] => 0.0381476
+	   [pOutput] => 0.517966
+	   [valid] =>
+	*/
+
+	if ( $d ) {
+		print_r($r);
+	}
+
+
+	/* primary and secondary anemometer wind speed */
+	if ( abs($r['windAverage0']-$r['windAverage1']) > WIND_AVERAGE_DELTA_MAX ) {
+		printf("WIND_AVERAGE_DELTA_MAX exceeds %s\n",WIND_AVERAGE_DELTA_MAX);
+//		print_r($r);
+		continue;
+	}
+
+	/* time synchronization between weather and power data */
+	if ( abs($r['wx_time']-$r['power_time']) > START_TIME_DELTA_MAX ) {
+		printf("START_TIME_DELTA_MAX exceeds %s\n",START_TIME_DELTA_MAX);
+//		print_r($r);
+		continue;
+	}
+
+	if  ( $r['windDirection'] < WIND_DIRECTION_DEGREE_MIN || $r['windDirection'] > WIND_DIRECTION_DEGREE_MAX ) {
+		printf("WIND DIRECTION < %s OR WIND DIRECTION > %s\n",WIND_DIRECTION_DEGREE_MIN,WIND_DIRECTION_DEGREE_MAX);
+//		print_r($r);
+		continue;
+	}
+
+
+
+	/* if we made it this far, we are valid */
+	$record_valid[$r['packet_date']]=1;
+	printf("\n");
+}
+
+//print_r($record_valid);
+
+foreach ($record_valid as $key => $value) {
+	if ( 1 == $value ) {
+		printf("%s was valid\n",$key);
+	}
+}
+
+
+mysqli_close($mysqli);
+?>
